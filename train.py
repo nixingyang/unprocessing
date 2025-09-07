@@ -23,7 +23,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from absl import flags
+from absl import app, flags
 import tensorflow as tf
 
 from unprocessing import dataset
@@ -78,7 +78,7 @@ flags.mark_flag_as_required('test_pattern')
 
 def main(_):
   inference_fn = network.inference
-  hparams = tf.contrib.training.HParams(learning_rate=FLAGS.learning_rate)
+  hparams = {'learning_rate': FLAGS.learning_rate}
   model_fn = estimator.create_model_fn(inference_fn, hparams)
   config = tf.estimator.RunConfig(FLAGS.model_dir)
   tf_estimator = tf.estimator.Estimator(model_fn=model_fn, config=config)
@@ -98,9 +98,9 @@ def main(_):
   train_spec, eval_spec = estimator.create_train_and_eval_specs(
       train_dataset_fn, eval_dataset_fn)
 
-  tf.logging.set_verbosity(tf.logging.INFO)
+  tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.INFO)
   tf.estimator.train_and_evaluate(tf_estimator, train_spec, eval_spec)
 
 
 if __name__ == '__main__':
-  tf.app.run(main)
+  app.run(main)

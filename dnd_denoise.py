@@ -180,8 +180,8 @@ def denoise_raw(denoiser, data_dir, output_dir):
 
 def main(_):
   with tf.Graph().as_default() as graph:
-    with tf.Session(graph=graph) as sess:
-      saver = tf.train.import_meta_graph(FLAGS.model_ckpt + '.meta')
+    with tf.compat.v1.Session(graph=graph) as sess:
+      saver = tf.compat.v1.train.import_meta_graph(FLAGS.model_ckpt + '.meta')
       saver.restore(sess, FLAGS.model_ckpt)
 
       def denoiser(noisy_img, shot_noise, read_noise):

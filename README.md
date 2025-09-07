@@ -15,7 +15,11 @@ If you use this code, please cite our paper:
 }
 ```
 
-The code is implemented in Tensorflow and the required packages are listed in `requirements.txt`.
+## Environment
+
+The code was originally built with TensorFlow 1 and has been updated to TensorFlow 2.15. It currently relies on the `tf.estimator.Estimator` APIs, which are supported up to TensorFlow 2.15. For future compatibility with newer TensorFlow versions, a migration to the `tf.keras` APIs is required. You can find more information in this [guide](https://www.tensorflow.org/guide/migrate/migrating_estimator).
+
+To align with TensorFlow's [tested build configurations](https://www.tensorflow.org/install/source#tested_build_configurations), we recommend using Python 3.9-3.11. Run the following command to set up the environment: `pip install --extra-index-url https://pypi.nvidia.com -r requirements.txt`.
 
 ## Evaluation on Darmstadt Noise Dataset
 

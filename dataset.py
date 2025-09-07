@@ -30,7 +30,7 @@ from unprocessing import unprocess
 
 def read_jpg(filename):
   """Reads an 8-bit JPG file from disk and normalizes to [0, 1]."""
-  image_file = tf.read_file(filename)
+  image_file = tf.io.read_file(filename)
   image = tf.image.decode_jpeg(image_file, channels=3)
   white_level = 255.0
   return tf.cast(image, tf.float32) / white_level
@@ -50,7 +50,7 @@ def is_large_enough(image, height, width):
 def augment(image, height, width):
   """Randomly flips and crops `images` to `height` by `width`."""
   size = [height, width, tf.shape(image)[-1]]
-  image = tf.random_crop(image, size)
+  image = tf.image.random_crop(image, size)
   image = tf.image.random_flip_left_right(image)
   image = tf.image.random_flip_up_down(image)
   return image
@@ -92,7 +92,7 @@ def create_dataset_fn(dir_pattern, height, width, batch_size):
 
   def dataset_fn_():
     """Creates a Dataset for unprocessing training."""
-    autotune = tf.data.experimental.AUTOTUNE
+    autotune = tf.data.AUTOTUNE
 
     filenames = tf.data.Dataset.list_files(dir_pattern, shuffle=True).repeat()
     images = filenames.map(read_jpg, num_parallel_calls=autotune)

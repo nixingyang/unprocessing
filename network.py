@@ -28,13 +28,13 @@ import tensorflow as tf
 
 def conv(features, num_channels, activation=tf.nn.leaky_relu):
   """Applies a 3x3 conv layer."""
-  return tf.layers.conv2d(features, num_channels, 3, padding='same',
+  return tf.compat.v1.layers.conv2d(features, num_channels, 3, padding='same',
                           activation=activation)
 
 
 def conv_block(features, num_channels):
   """Applies 3x conv layers."""
-  with tf.name_scope(None, 'conv_block'):
+  with tf.compat.v1.name_scope(None, 'conv_block'):
     features = conv(features, num_channels)
     features = conv(features, num_channels)
     features = conv(features, num_channels)
@@ -43,16 +43,16 @@ def conv_block(features, num_channels):
 
 def downsample_2x(features):
   """Applies a 2x spatial downsample via max pooling."""
-  with tf.name_scope(None, 'downsample_2x'):
-    return tf.layers.max_pooling2d(features, 2, 2, padding='same')
+  with tf.compat.v1.name_scope(None, 'downsample_2x'):
+    return tf.compat.v1.layers.max_pooling2d(features, 2, 2, padding='same')
 
 
 def upsample_2x(features):
   """Applies a 2x spatial upsample via bilinear interpolation."""
-  with tf.name_scope(None, 'upsample_2x'):
+  with tf.compat.v1.name_scope(None, 'upsample_2x'):
     shape = tf.shape(features)
     shape = [shape[1] * 2, shape[2] * 2]
-    features = tf.image.resize_bilinear(features, shape)
+    features = tf.compat.v1.image.resize_bilinear(features, shape)
     return features
 
 
@@ -80,17 +80,17 @@ def inference(noisy_img, variance):
   features = tf.concat([noisy_img, variance], axis=-1)
   skip_connections = []
 
-  with tf.name_scope(None, 'encoder'):
+  with tf.compat.v1.name_scope(None, 'encoder'):
     for num_channels in (32, 64, 128, 256):
       features = conv_block(features, num_channels)
       skip_connections.append(features)
       features = downsample_2x(features)
     features = conv_block(features, 512)
 
-  with tf.name_scope(None, 'decoder'):
+  with tf.compat.v1.name_scope(None, 'decoder'):
     for num_channels in (256, 128, 64, 32):
       features = upsample_2x(features)
-      with tf.name_scope(None, 'skip_connection'):
+      with tf.compat.v1.name_scope(None, 'skip_connection'):
         features = tf.concat([features, skip_connections.pop()], axis=-1)
       features = conv_block(features, num_channels)
 

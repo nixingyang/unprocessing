@@ -43,14 +43,14 @@ def random_ccm():
                [-0.097, 0.1581, 0.5181]]]
   num_ccms = len(xyz2cams)
   xyz2cams = tf.constant(xyz2cams)
-  weights = tf.random_uniform((num_ccms, 1, 1), 1e-8, 1e8)
+  weights = tf.random.uniform((num_ccms, 1, 1), 1e-8, 1e8)
   weights_sum = tf.reduce_sum(weights, axis=0)
   xyz2cam = tf.reduce_sum(xyz2cams * weights, axis=0) / weights_sum
 
   # Multiplies with RGB -> XYZ to get RGB -> Camera CCM.
-  rgb2xyz = tf.to_float([[0.4124564, 0.3575761, 0.1804375],
+  rgb2xyz = tf.cast([[0.4124564, 0.3575761, 0.1804375],
                          [0.2126729, 0.7151522, 0.0721750],
-                         [0.0193339, 0.1191920, 0.9503041]])
+                         [0.0193339, 0.1191920, 0.9503041]], tf.float32)
   rgb2cam = tf.matmul(xyz2cam, rgb2xyz)
 
   # Normalizes each row.
@@ -61,11 +61,11 @@ def random_ccm():
 def random_gains():
   """Generates random gains for brightening and white balance."""
   # RGB gain represents brightening.
-  rgb_gain = 1.0 / tf.random_normal((), mean=0.8, stddev=0.1)
+  rgb_gain = 1.0 / tf.random.normal((), mean=0.8, stddev=0.1)
 
   # Red and blue gains represent white balance.
-  red_gain = tf.random_uniform((), 1.9, 2.4)
-  blue_gain = tf.random_uniform((), 1.5, 1.9)
+  red_gain = tf.random.uniform((), 1.9, 2.4)
+  blue_gain = tf.random.uniform((), 1.5, 1.9)
   return rgb_gain, red_gain, blue_gain
 
 
@@ -117,12 +117,12 @@ def mosaic(image):
 
 def unprocess(image):
   """Unprocesses an image from sRGB to realistic raw data."""
-  with tf.name_scope(None, 'unprocess'):
+  with tf.compat.v1.name_scope(None, 'unprocess'):
     image.shape.assert_is_compatible_with([None, None, 3])
 
     # Randomly creates image metadata.
     rgb2cam = random_ccm()
-    cam2rgb = tf.matrix_inverse(rgb2cam)
+    cam2rgb = tf.linalg.inv(rgb2cam)
     rgb_gain, red_gain, blue_gain = random_gains()
 
     # Approximately inverts global tone mapping.
@@ -149,13 +149,13 @@ def unprocess(image):
 
 def random_noise_levels():
   """Generates random noise levels from a log-log linear distribution."""
-  log_min_shot_noise = tf.log(0.0001)
-  log_max_shot_noise = tf.log(0.012)
-  log_shot_noise = tf.random_uniform((), log_min_shot_noise, log_max_shot_noise)
+  log_min_shot_noise = tf.math.log(0.0001)
+  log_max_shot_noise = tf.math.log(0.012)
+  log_shot_noise = tf.random.uniform((), log_min_shot_noise, log_max_shot_noise)
   shot_noise = tf.exp(log_shot_noise)
 
   line = lambda x: 2.18 * x + 1.20
-  log_read_noise = line(log_shot_noise) + tf.random_normal((), stddev=0.26)
+  log_read_noise = line(log_shot_noise) + tf.random.normal((), stddev=0.26)
   read_noise = tf.exp(log_read_noise)
   return shot_noise, read_noise
 
@@ -163,5 +163,5 @@ def random_noise_levels():
 def add_noise(image, shot_noise=0.01, read_noise=0.0005):
   """Adds random shot (proportional to image) and read (independent) noise."""
   variance = image * shot_noise + read_noise
-  noise = tf.random_normal(tf.shape(image), stddev=tf.sqrt(variance))
+  noise = tf.random.normal(tf.shape(image), stddev=tf.sqrt(variance))
   return image + noise

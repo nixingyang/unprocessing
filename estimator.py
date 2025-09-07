@@ -42,11 +42,11 @@ def psnr(labels, predictions):
     Tuple of (psnr, update_op) as returned by tf.metrics.
   """
   predictions.shape.assert_is_compatible_with(labels.shape)
-  with tf.control_dependencies([tf.assert_greater_equal(labels, 0.0),
-                                tf.assert_less_equal(labels, 1.0)]):
+  with tf.control_dependencies([tf.compat.v1.assert_greater_equal(labels, 0.0),
+                                tf.compat.v1.assert_less_equal(labels, 1.0)]):
     psnrs = tf.image.psnr(labels, predictions, max_val=1.0)
-    psnrs = tf.boolean_mask(psnrs, tf.logical_not(tf.is_inf(psnrs)))
-    return tf.metrics.mean(psnrs, name='psnr')
+    psnrs = tf.boolean_mask(psnrs, tf.logical_not(tf.compat.v1.is_inf(psnrs)))
+    return tf.compat.v1.metrics.mean(psnrs, name='psnr')
 
 
 def create_model_fn(inference_fn, hparams):
@@ -59,7 +59,7 @@ def create_model_fn(inference_fn, hparams):
         variance - Tensor of shape [B, H, W, 4].
       Returns -
         Tensor of shape [B, H, W, 4].
-    hparams: Hyperparameters for model as a tf.contrib.training.HParams object.
+    hparams: Hyperparameters for model as a dictionary.
 
   Returns:
     `_model_fn`.
@@ -91,18 +91,16 @@ def create_model_fn(inference_fn, hparams):
     truth_img = process_images(labels)
 
     if mode in [tf.estimator.ModeKeys.TRAIN, tf.estimator.ModeKeys.EVAL]:
-      loss = tf.losses.absolute_difference(truth_img, denoised_img)
+      loss = tf.compat.v1.losses.absolute_difference(truth_img, denoised_img)
     else:
       loss = None
 
     if mode == tf.estimator.ModeKeys.TRAIN:
-      optimizer = tf.train.AdamOptimizer(learning_rate=hparams.learning_rate)
-      train_op = tf.contrib.layers.optimize_loss(
-          loss=loss,
-          global_step=tf.train.get_global_step(),
-          learning_rate=None,
-          optimizer=optimizer,
-          name='')  # Prevents scope prefix.
+      optimizer = tf.compat.v1.train.AdamOptimizer(
+          learning_rate=hparams['learning_rate'])
+      gradients = optimizer.compute_gradients(loss)
+      global_step = tf.compat.v1.train.get_global_step()
+      train_op = optimizer.apply_gradients(gradients, global_step=global_step)
     else:
       train_op = None
 
